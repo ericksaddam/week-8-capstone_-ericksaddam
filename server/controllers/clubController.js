@@ -53,11 +53,12 @@ export const getUserClubs = async (req, res) => {
     })
       .select('name description category members tasks createdAt')
       .populate('createdBy', 'name email')
+      .populate('members.user', 'name email')
       .sort({ createdAt: -1 });
 
     res.json({
       clubs: clubs.map(club => {
-        const userMember = club.members.find(m => m.user.toString() === req.user.id);
+        const userMember = club.members.find(m => m.user._id.toString() === req.user.id);
         return {
           ...club.toObject(),
           memberCount: club.members.length,
@@ -277,6 +278,9 @@ export const handleJoinRequest = async (req, res) => {
       return res.status(400).json({ error: 'Invalid action' });
     }
 
+    // Remove the processed request from the array
+    club.joinRequests.pull(requestId);
+
     await club.save();
 
     res.json({ 
@@ -298,7 +302,7 @@ export const leaveClub = async (req, res) => {
       return res.status(404).json({ error: 'Club not found' });
     }
 
-    const memberIndex = club.members.findIndex(m => m.user.toString() === req.user.id);
+    const memberIndex = club.members.findIndex(m => m.user._id.toString() === req.user.id);
     if (memberIndex === -1) {
       return res.status(400).json({ error: 'You are not a member of this club' });
     }
@@ -347,5 +351,425 @@ export const getClubMembers = async (req, res) => {
   } catch (error) {
     console.error('Get club members error:', error);
     res.status(500).json({ error: 'Failed to fetch club members' });
+  }
+};
+
+// Create club goal
+export const createClubGoal = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+    const { title, description, targetDate } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'Goal title is required' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member with admin/owner role or system admin
+    const isSystemAdmin = req.user.role === 'admin';
+    const member = club.members.find(m => {
+      const userId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return userId === req.user.id;
+    });
+    
+    if (!isSystemAdmin && (!member || (member.role !== 'admin' && member.role !== 'owner'))) {
+      return res.status(403).json({ error: 'Only club admins and owners can create goals' });
+    }
+
+    const newGoal = {
+      title: title.trim(),
+      description: description?.trim(),
+      targetDate: targetDate ? new Date(targetDate) : undefined,
+      createdBy: req.user.id,
+      status: 'active'
+    };
+
+    club.goals.push(newGoal);
+    await club.save();
+    await club.logAction('goal_created', req.user.id, { goalTitle: title });
+
+    const createdGoal = club.goals[club.goals.length - 1];
+    await club.populate('goals.createdBy', 'name email');
+
+    res.status(201).json({
+      message: 'Goal created successfully',
+      goal: createdGoal
+    });
+  } catch (error) {
+    console.error('Create club goal error:', error);
+    res.status(500).json({ error: 'Failed to create goal' });
+  }
+};
+
+// Get club goals
+export const getClubGoals = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+
+    const club = await Club.findById(clubId)
+      .populate('goals.createdBy', 'name email');
+
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member or admin
+    const isAdmin = req.user.role === 'admin';
+    const isMember = club.members.some(m => {
+      const userId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return userId === req.user.id;
+    });
+    
+    if (!isMember && !isAdmin && club.status !== 'approved') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json({ goals: club.goals });
+  } catch (error) {
+    console.error('Get club goals error:', error);
+    res.status(500).json({ error: 'Failed to fetch club goals' });
+  }
+};
+
+// Create club topic
+export const createClubTopic = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+    const { title, description } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'Topic title is required' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member or admin
+    const isAdmin = req.user.role === 'admin';
+    const isMember = club.members.some(m => {
+      const userId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return userId === req.user.id;
+    });
+    
+    if (!isMember && !isAdmin) {
+      return res.status(403).json({ error: 'Only club members can create topics' });
+    }
+
+    const newTopic = {
+      title: title.trim(),
+      description: description?.trim(),
+      createdBy: req.user.id
+    };
+
+    club.topics.push(newTopic);
+    await club.save();
+    await club.logAction('topic_created', req.user.id, { topicTitle: title });
+
+    const createdTopic = club.topics[club.topics.length - 1];
+    await club.populate('topics.createdBy', 'name email');
+
+    res.status(201).json({
+      message: 'Topic created successfully',
+      topic: createdTopic
+    });
+  } catch (error) {
+    console.error('Create club topic error:', error);
+    res.status(500).json({ error: 'Failed to create topic' });
+  }
+};
+
+// Get club topics
+export const getClubTopics = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+
+    const club = await Club.findById(clubId)
+      .populate('topics.createdBy', 'name email');
+
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member or admin
+    const isAdmin = req.user.role === 'admin';
+    const isMember = club.members.some(m => {
+      const userId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return userId === req.user.id;
+    });
+    
+    if (!isMember && !isAdmin && club.status !== 'approved') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json({ topics: club.topics });
+  } catch (error) {
+    console.error('Get club topics error:', error);
+    res.status(500).json({ error: 'Failed to fetch club topics' });
+  }
+};
+
+// Create knowledge base entry
+export const createKnowledgeBaseEntry = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+    const { title, content, tags } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ error: 'Title and content are required' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member or admin
+    const isAdmin = req.user.role === 'admin';
+    const isMember = club.members.some(m => {
+      const userId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return userId === req.user.id;
+    });
+    
+    if (!isMember && !isAdmin) {
+      return res.status(403).json({ error: 'Only club members can create knowledge base entries' });
+    }
+
+    const newEntry = {
+      title: title.trim(),
+      content: content.trim(),
+      tags: tags || [],
+      createdBy: req.user.id
+    };
+
+    club.knowledgeBase.push(newEntry);
+    await club.save();
+    await club.logAction('kb_entry_created', req.user.id, { entryTitle: title });
+
+    const createdEntry = club.knowledgeBase[club.knowledgeBase.length - 1];
+    await club.populate('knowledgeBase.createdBy', 'name email');
+
+    res.status(201).json({
+      message: 'Knowledge base entry created successfully',
+      entry: createdEntry
+    });
+  } catch (error) {
+    console.error('Create knowledge base entry error:', error);
+    res.status(500).json({ error: 'Failed to create knowledge base entry' });
+  }
+};
+
+// Get knowledge base entries
+export const getKnowledgeBase = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+
+    const club = await Club.findById(clubId)
+      .populate('knowledgeBase.createdBy', 'name email');
+
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member or admin
+    const isAdmin = req.user.role === 'admin';
+    const isMember = club.members.some(m => {
+      const userId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return userId === req.user.id;
+    });
+    
+    if (!isMember && !isAdmin && club.status !== 'approved') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json({ knowledgeBase: club.knowledgeBase });
+  } catch (error) {
+    console.error('Get knowledge base error:', error);
+    res.status(500).json({ error: 'Failed to fetch knowledge base' });
+  }
+};
+
+// Add a reply to a topic
+export const addTopicReply = async (req, res) => {
+  try {
+    const { clubId, topicId } = req.params;
+    const { content } = req.body;
+    const userId = req.user.id;
+
+    if (!content) {
+      return res.status(400).json({ error: 'Reply content is required' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member or admin
+    const isAdmin = req.user.role === 'admin';
+    const isMember = club.members.some(m => {
+      const memberId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return memberId === userId;
+    });
+    
+    if (!isMember && !isAdmin) {
+      return res.status(403).json({ error: 'Only club members can reply to topics' });
+    }
+
+    const topic = club.topics.id(topicId);
+    if (!topic) {
+      return res.status(404).json({ error: 'Topic not found' });
+    }
+
+    const newReply = {
+      user: userId,
+      content,
+      createdAt: new Date()
+    };
+
+    topic.replies.push(newReply);
+    await club.save();
+
+    // Populate user details in the response
+    const populatedClub = await Club.populate(club, {
+      path: 'topics.replies.user',
+      select: 'name email avatar'
+    });
+
+    const savedReply = populatedClub.topics.id(topicId).replies[topic.replies.length - 1];
+    
+    res.status(201).json({ reply: savedReply });
+  } catch (error) {
+    console.error('Add topic reply error:', error);
+    res.status(500).json({ error: 'Failed to add reply to topic' });
+  }
+};
+
+// Get all replies for a topic
+export const getTopicReplies = async (req, res) => {
+  try {
+    const { clubId, topicId } = req.params;
+
+    const club = await Club.findById(clubId).populate({
+      path: 'topics.replies.user',
+      select: 'name email avatar'
+    });
+    
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is a member or admin
+    const isAdmin = req.user.role === 'admin';
+    const isMember = club.members.some(m => {
+      const memberId = typeof m.user === 'object' ? m.user._id.toString() : m.user.toString();
+      return memberId === req.user.id;
+    });
+    
+    if (!isMember && !isAdmin && club.status !== 'approved') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const topic = club.topics.id(topicId);
+    if (!topic) {
+      return res.status(404).json({ error: 'Topic not found' });
+    }
+
+    res.json({ replies: topic.replies });
+  } catch (error) {
+    console.error('Get topic replies error:', error);
+    res.status(500).json({ error: 'Failed to fetch topic replies' });
+  }
+};
+
+// Update club member role
+export const updateMemberRole = async (req, res) => {
+  try {
+    const { clubId, memberId } = req.params;
+    const { role } = req.body;
+
+    if (!['member', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is owner
+    const requesterMember = club.members.find(m => m.user.toString() === req.user.id);
+    if (!requesterMember || requesterMember.role !== 'owner') {
+      return res.status(403).json({ error: 'Only club owners can update member roles' });
+    }
+
+    const targetMember = club.members.id(memberId);
+    if (!targetMember) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+
+    if (targetMember.role === 'owner') {
+      return res.status(400).json({ error: 'Cannot change owner role' });
+    }
+
+    targetMember.role = role;
+    await club.save();
+    await club.logAction('member_role_updated', req.user.id, { 
+      memberId: targetMember.user, 
+      newRole: role 
+    });
+
+    res.json({ message: 'Member role updated successfully' });
+  } catch (error) {
+    console.error('Update member role error:', error);
+    res.status(500).json({ error: 'Failed to update member role' });
+  }
+};
+
+// Remove club member
+export const removeMember = async (req, res) => {
+  try {
+    const { clubId, memberId } = req.params;
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    // Check if user is owner or admin
+    const requesterMember = club.members.find(m => m.user.toString() === req.user.id);
+    if (!requesterMember || (requesterMember.role !== 'owner' && requesterMember.role !== 'admin')) {
+      return res.status(403).json({ error: 'Only club owners and admins can remove members' });
+    }
+
+    const targetMember = club.members.id(memberId);
+    if (!targetMember) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+
+    if (targetMember.role === 'owner') {
+      return res.status(400).json({ error: 'Cannot remove club owner' });
+    }
+
+    // Admins cannot remove other admins, only owners can
+    if (targetMember.role === 'admin' && requesterMember.role !== 'owner') {
+      return res.status(403).json({ error: 'Only club owners can remove admins' });
+    }
+
+    club.members.pull(memberId);
+    await club.save();
+    await club.logAction('member_removed', req.user.id, { 
+      removedMemberId: targetMember.user 
+    });
+
+    res.json({ message: 'Member removed successfully' });
+  } catch (error) {
+    console.error('Remove member error:', error);
+    res.status(500).json({ error: 'Failed to remove member' });
   }
 };

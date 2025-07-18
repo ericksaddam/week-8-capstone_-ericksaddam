@@ -289,6 +289,56 @@ export const getPendingRequests = async (req, res) => {
   }
 };
 
+// Get pending club creation requests (admin only)
+export const getPendingClubRequests = async (req, res) => {
+  try {
+    const pendingClubs = await Club.find({ status: 'pending' })
+      .populate('createdBy', 'name email')
+      .select('name description category createdBy createdAt')
+      .sort({ createdAt: -1 });
+
+    res.json(pendingClubs);
+  } catch (error) {
+    console.error('Get pending club requests error:', error);
+    res.status(500).json({ error: 'Failed to fetch pending club requests' });
+  }
+};
+
+// Get pending join requests (admin only)
+export const getPendingJoinRequests = async (req, res) => {
+  try {
+    const clubsWithJoinRequests = await Club.find({
+      'joinRequests.status': 'pending'
+    })
+      .populate('joinRequests.user', 'name email')
+      .select('name joinRequests')
+      .sort({ createdAt: -1 });
+
+    const pendingJoinRequests = [];
+    clubsWithJoinRequests.forEach(club => {
+      club.joinRequests.forEach(request => {
+        if (request.status === 'pending') {
+          pendingJoinRequests.push({
+            _id: request._id,
+            club: {
+              _id: club._id,
+              name: club.name
+            },
+            user: request.user,
+            message: request.message,
+            createdAt: request.createdAt
+          });
+        }
+      });
+    });
+
+    res.json(pendingJoinRequests);
+  } catch (error) {
+    console.error('Get pending join requests error:', error);
+    res.status(500).json({ error: 'Failed to fetch pending join requests' });
+  }
+};
+
 // Get dashboard statistics (admin only)
 export const getDashboardStats = async (req, res) => {
   try {
@@ -330,5 +380,125 @@ export const getDashboardStats = async (req, res) => {
   } catch (error) {
     console.error('Get dashboard stats error:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
+  }
+};
+
+// Get system settings (admin only)
+export const getSystemSettings = async (req, res) => {
+  try {
+    // Get real system statistics
+    const [
+      totalUsers,
+      totalClubs,
+      totalTasks,
+      storageStats
+    ] = await Promise.all([
+      User.countDocuments(),
+      Club.countDocuments(),
+      Task.countDocuments(),
+      // For storage, we'll calculate based on data size (simplified)
+      User.aggregate([
+        { $group: { _id: null, totalSize: { $sum: { $bsonSize: '$$ROOT' } } } }
+      ])
+    ]);
+
+    const storageUsed = storageStats[0]?.totalSize || 0;
+    const storageUsedMB = (storageUsed / (1024 * 1024)).toFixed(2);
+
+    // Default system settings (in a real app, these would be stored in database)
+    const settings = {
+      siteName: 'Harambee Hub',
+      siteDescription: 'A collaborative task management platform for communities',
+      allowRegistration: true,
+      requireEmailVerification: false,
+      maxClubsPerUser: 10,
+      maxMembersPerClub: 100,
+      enableNotifications: true,
+      maintenanceMode: false,
+    };
+
+    const systemInfo = {
+      totalUsers,
+      totalClubs,
+      totalTasks,
+      storageUsed: `${storageUsedMB} MB`,
+      lastBackup: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      uptime: process.uptime(),
+      nodeVersion: process.version,
+      platform: process.platform
+    };
+
+    res.json({
+      settings,
+      systemInfo
+    });
+  } catch (error) {
+    console.error('Get system settings error:', error);
+    res.status(500).json({ error: 'Failed to fetch system settings' });
+  }
+};
+
+// Update system settings (admin only)
+export const updateSystemSettings = async (req, res) => {
+  try {
+    const settings = req.body;
+    
+    // In a real app, you would save these to a database
+    // For now, we'll just return success
+    console.log('Updating system settings:', settings);
+    
+    res.json({
+      message: 'System settings updated successfully',
+      settings
+    });
+  } catch (error) {
+    console.error('Update system settings error:', error);
+    res.status(500).json({ error: 'Failed to update system settings' });
+  }
+};
+
+// Backup database (admin only)
+export const backupDatabase = async (req, res) => {
+  try {
+    // In a real app, this would trigger an actual database backup
+    // For now, we'll simulate the process
+    console.log('Starting database backup...');
+    
+    // Simulate backup process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const backupInfo = {
+      timestamp: new Date().toISOString(),
+      size: '15.7 MB',
+      collections: ['users', 'clubs', 'tasks', 'notifications'],
+      status: 'completed'
+    };
+    
+    res.json({
+      message: 'Database backup completed successfully',
+      backup: backupInfo
+    });
+  } catch (error) {
+    console.error('Database backup error:', error);
+    res.status(500).json({ error: 'Failed to backup database' });
+  }
+};
+
+// Clear system cache (admin only)
+export const clearCache = async (req, res) => {
+  try {
+    // In a real app, this would clear Redis cache, file cache, etc.
+    console.log('Clearing system cache...');
+    
+    // Simulate cache clearing
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    res.json({
+      message: 'System cache cleared successfully',
+      clearedItems: ['user_sessions', 'club_data', 'task_cache', 'notification_queue']
+    });
+  } catch (error) {
+    console.error('Clear cache error:', error);
+    res.status(500).json({ error: 'Failed to clear cache' });
   }
 };

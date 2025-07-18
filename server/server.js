@@ -8,6 +8,9 @@ import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js';
 import clubRoutes from './routes/clubs.js';
 import adminRoutes from './routes/admin.js';
+import communitiesRoutes from './routes/communities.js';
+import { auth } from './middleware/auth.js';
+import { getUserClubs } from './controllers/clubController.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,22 +23,51 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://localhost:8081',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:8081'
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    console.log('CORS request from origin:', origin);
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    console.log('CORS blocked origin:', origin);
+    const msg = `CORS policy blocked origin: ${origin}`;
+    return callback(new Error(msg), false);
+  },
   credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
+// Request logging middleware (suppress health check logs)
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  if (!(req.path === '/api/health' || req.path === '/health')) {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  }
   next();
 });
 
-// Health check endpoint
+// Health check endpoints
 app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
@@ -48,6 +80,22 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/communities', communitiesRoutes);
+
+// User-specific routes
+app.get('/api/user/clubs', auth, getUserClubs);
+
+// User profile endpoint
+app.get('/api/profile', auth, (req, res) => {
+  // Return the user profile from the auth middleware
+  res.json(req.user);
+});
+
+// Notifications endpoint (placeholder)
+app.get('/api/notifications', auth, (req, res) => {
+  // Return array directly to match frontend expectations
+  res.json([]);
+});
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -13,7 +13,10 @@ const clubSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    status: { type: String, enum: ['pending', 'approved'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    approvalRequestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    approvalActionedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    isArchived: { type: Boolean, default: false },
     members: [{
       user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       role: { type: String, enum: ['member', 'admin'], default: 'member' },
@@ -83,7 +86,13 @@ const clubSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    replies: [{
+      _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      content: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now }
+    }]
   }],
   goals: [{
     _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
@@ -105,6 +114,12 @@ const clubSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Utility method for logging club actions
+clubSchema.methods.logAction = async function(action, user, details = {}) {
+  this.clubLogs.push({ action, user, details });
+  await this.save();
+};
 
 // Indexes for better query performance
 clubSchema.index({ status: 1 });

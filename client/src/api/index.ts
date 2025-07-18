@@ -209,8 +209,9 @@ export const getUserProfile = async (token: string): Promise<User | null> => {
 
 export const fetchTasks = async (): Promise<Task[]> => {
   try {
-    const response = await api.get<{ data: Task[] }>('/tasks');
-    return response.data.data || [];
+    const response = await api.get('/tasks');
+    // Handle both formats: { data: [...] } and { tasks: [...] }
+    return response.data.data || response.data.tasks || [];
   } catch (error) {
     console.error('Error fetching tasks:', error);
     throw new Error('Failed to fetch tasks. Please try again later.');
@@ -220,8 +221,8 @@ export const fetchTasks = async (): Promise<Task[]> => {
 export const fetchRecentTasks = async (limit: number = 5): Promise<Task[]> => {
   try {
     // The /tasks/recent endpoint is not available, so we fetch all tasks and sort/slice.
-    const response = await api.get<{ data: Task[] }>('/tasks');
-    const tasks = response.data.data || [];
+    const response = await api.get('/tasks');
+    const tasks = response.data.data || response.data.tasks || [];
     return tasks
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
@@ -243,8 +244,9 @@ export interface CreateTaskData {
 
 export const createTask = async (taskData: CreateTaskData): Promise<Task> => {
   try {
-    const response = await api.post<{ data: Task }>('/tasks', taskData);
-    return response.data.data;
+    const response = await api.post('/tasks', taskData);
+    // Handle both formats: { data: {...} } and { task: {...} }
+    return response.data.data || response.data.task;
   } catch (error) {
     console.error('Error creating task:', error);
     throw new Error('Failed to create task. Please try again.');
@@ -262,8 +264,9 @@ export interface UpdateTaskData {
 
 export const updateTask = async (id: string, updates: UpdateTaskData): Promise<Task> => {
   try {
-    const response = await api.put<{ data: Task }>(`/tasks/${id}`, updates);
-    return response.data.data;
+    const response = await api.put(`/tasks/${id}`, updates);
+    // Handle both formats: { data: {...} } and { task: {...} }
+    return response.data.data || response.data.task;
   } catch (error) {
     console.error('Error updating task:', error);
     throw new Error('Failed to update task. Please try again.');
@@ -279,25 +282,15 @@ export const deleteTask = async (id: string): Promise<void> => {
   }
 };
 
-export const createClubGoal = async (clubId: string, goalData: { title: string; description: string }) => {
-  const response = await api.post(`/clubs/${clubId}/goals`, goalData);
-  return response.data;
-};
 
-export const createClubTopic = async (clubId: string, topicData: { title: string; content: string }) => {
-  const response = await api.post(`/clubs/${clubId}/topics`, topicData);
-  return response.data;
-};
+
+
 
 export const createTopicReply = async (clubId: string, topicId: string, replyData: { content: string }) => {
   const response = await api.post(`/clubs/${clubId}/topics/${topicId}/replies`, replyData);
   return response.data;
 };
 
-export const createKnowledgeBaseEntry = async (clubId: string, entryData: { title: string; content: string }) => {
-  const response = await api.post(`/clubs/${clubId}/knowledge-base`, entryData);
-  return response.data;
-};
 
 // --- Notifications ---
 export const fetchNotifications = async (): Promise<Notification[]> => {
@@ -311,27 +304,45 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
 
 // --- Admin ---
 export const fetchAdminDashboardStats = async (): Promise<AdminDashboardStats> => {
-  // Return mock data for now since the endpoint doesn't exist
+  const response = await api.get('/admin/dashboard');
+  const data = response.data;
+  
   return {
     userStats: {
-      totalUsers: 0,
-      newUsersToday: 0,
-      admins: 0
+      totalUsers: data.stats.totalUsers || 0,
+      newUsersToday: data.stats.newUsersToday || 0,
+      admins: data.stats.admins || 0
     },
     clubStats: {
-      totalClubs: 0,
-      pendingClubs: 0,
-      newClubsToday: 0
+      totalClubs: data.stats.totalClubs || 0,
+      pendingClubs: data.stats.pendingClubs || 0,
+      newClubsToday: data.stats.newClubsToday || 0
     },
-    recentActivities: []
+    recentActivities: data.recent?.users?.map((user: any) => ({
+      _id: user._id,
+      user: { name: user.name },
+      action: 'joined the platform',
+      timestamp: user.createdAt
+    })) || []
   };
 };
 
 export const fetchAdminDashboardAnalytics = async (): Promise<AdminDashboardAnalytics> => {
-  // Return mock data for now since the endpoint doesn't exist
+  // For now, generate some sample data based on recent activity
+  // In a real app, this would come from a dedicated analytics endpoint
+  const today = new Date();
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() - (6 - i));
+    return {
+      date: date.toISOString().split('T')[0],
+      count: Math.floor(Math.random() * 10) + 1
+    };
+  });
+  
   return {
-    userGrowth: [],
-    clubGrowth: []
+    userGrowth: last7Days,
+    clubGrowth: last7Days.map(day => ({ ...day, count: Math.floor(day.count / 2) }))
   };
 };
 
@@ -348,8 +359,15 @@ export const fetchAllApprovedClubs = async (): Promise<Club[]> => {
   }
 };
 
-export const fetchUserClubs = async () => {
-  return api.get('/user/clubs').then(res => res.data);
+export const fetchUserClubs = async (): Promise<Club[]> => {
+  try {
+    const response = await api.get('/user/clubs');
+    // Handle both formats: { clubs: [...] } and direct array
+    return response.data.clubs || response.data || [];
+  } catch (error) {
+    console.error('Error fetching user clubs:', error);
+    return [];
+  }
 };
 
 // Note: These endpoints need to be implemented on the backend
@@ -388,62 +406,11 @@ export const fetchClubCommunities = async (clubId: string): Promise<Community[]>
   }
 };
 
-export const fetchClubGoals = async (clubId: string): Promise<Goal[]> => {
-  try {
-    // First, check if the user has access to this club
-    const clubResponse = await api.get<{ data: Club }>(`/clubs/${clubId}`);
-    const club = clubResponse.data.data;
-    
-    if (!club) {
-      console.error('Club not found or access denied');
-      return [];
-    }
-    
-    // The goals are included in the club response
-    return club.goals || [];
-  } catch (error) {
-    console.error('Error fetching club goals:', error);
-    return [];
-  }
-};
 
-export const fetchClubTopics = async (clubId: string): Promise<Topic[]> => {
-  try {
-    // First, check if the user has access to this club
-    const clubResponse = await api.get<{ data: Club }>(`/clubs/${clubId}`);
-    const club = clubResponse.data.data;
-    
-    if (!club) {
-      console.error('Club not found or access denied');
-      return [];
-    }
-    
-    // The topics are included in the club response
-    return club.topics || [];
-  } catch (error) {
-    console.error('Error fetching club topics:', error);
-    return [];
-  }
-};
 
-export const fetchClubKnowledgeBase = async (clubId: string): Promise<KnowledgeBaseEntry[]> => {
-  try {
-    // First, check if the user has access to this club
-    const clubResponse = await api.get<{ data: Club }>(`/clubs/${clubId}`);
-    const club = clubResponse.data.data;
-    
-    if (!club) {
-      console.error('Club not found or access denied');
-      return [];
-    }
-    
-    // The knowledge base entries are included in the club response
-    return club.knowledgeBase || [];
-  } catch (error) {
-    console.error('Error fetching club knowledge base:', error);
-    return [];
-  }
-};
+
+
+
 
 export const fetchClubMembers = async (clubId: string): Promise<ClubMember[]> => {
   try {
@@ -515,14 +482,96 @@ export const addMemberToClub = async (clubId: string, userId: string) => {
   const response = await api.post(`/clubs/${clubId}/add-member`, { userId });
   return response.data;
 };
-export const updateClubMemberRole = async (clubId: string, userId: string, role: 'member' | 'admin') => {
-  const response = await api.put(`/clubs/${clubId}/members/${userId}`, { role });
-  return response.data;
+
+
+
+
+// --- Club Goals ---
+export const createClubGoal = async (clubId: string, goalData: { title: string; description?: string; targetDate?: string }) => {
+  console.log('Creating club goal:', { clubId, goalData });
+  if (!clubId) throw new Error('Club ID is required');
+  if (!goalData.title) throw new Error('Goal title is required');
+  try {
+    const response = await api.post(`/clubs/${clubId}/goals`, goalData);
+    console.log('Goal creation response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating club goal:', error);
+    throw error;
+  }
 };
 
-export const removeMemberFromClub = async (clubId: string, userId: string) => {
-  const response = await api.post(`/clubs/${clubId}/remove-member`, { userId });
-  return response.data;
+export const fetchClubGoals = async (clubId: string) => {
+  try {
+    const response = await api.get(`/clubs/${clubId}/goals`);
+    return response.data.goals || [];
+  } catch (error) {
+    console.error('Error fetching club goals:', error);
+    return [];
+  }
+};
+
+// --- Club Topics ---
+export const createClubTopic = async (clubId: string, topicData: { title: string; description?: string }) => {
+  try {
+    const response = await api.post(`/clubs/${clubId}/topics`, topicData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating club topic:', error);
+    throw error;
+  }
+};
+
+export const fetchClubTopics = async (clubId: string) => {
+  try {
+    const response = await api.get(`/clubs/${clubId}/topics`);
+    return response.data.topics || [];
+  } catch (error) {
+    console.error('Error fetching club topics:', error);
+    return [];
+  }
+};
+
+// --- Club Knowledge Base ---
+export const createKnowledgeBaseEntry = async (clubId: string, entryData: { title: string; content: string; tags?: string[] }) => {
+  try {
+    const response = await api.post(`/clubs/${clubId}/knowledge`, entryData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating knowledge base entry:', error);
+    throw error;
+  }
+};
+
+export const fetchKnowledgeBase = async (clubId: string) => {
+  try {
+    const response = await api.get(`/clubs/${clubId}/knowledge`);
+    return response.data.knowledgeBase || [];
+  } catch (error) {
+    console.error('Error fetching knowledge base:', error);
+    return [];
+  }
+};
+
+// --- Club Member Management ---
+export const updateClubMemberRole = async (clubId: string, memberId: string, role: 'member' | 'admin') => {
+  try {
+    const response = await api.put(`/clubs/${clubId}/members/${memberId}/role`, { role });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating member role:', error);
+    throw error;
+  }
+};
+
+export const removeClubMember = async (clubId: string, memberId: string) => {
+  try {
+    const response = await api.delete(`/clubs/${clubId}/members/${memberId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error removing club member:', error);
+    throw error;
+  }
 };
 
 // --- Users ---

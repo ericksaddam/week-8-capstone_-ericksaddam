@@ -8,7 +8,13 @@ import {
   getClubDetails, 
   handleClubApproval, 
   getPendingRequests, 
-  getDashboardStats 
+  getDashboardStats,
+  getPendingClubRequests,
+  getPendingJoinRequests,
+  getSystemSettings,
+  updateSystemSettings,
+  backupDatabase,
+  clearCache
 } from '../controllers/adminController.js';
 import { auth, admin } from '../middleware/auth.js';
 
@@ -58,8 +64,38 @@ router.get('/clubs/:clubId', getClubDetails);
 router.post('/clubs/:clubId/approval', handleClubApproval);
 
 // @route   GET /api/admin/requests
-// @desc    Get pending requests
+// @desc    Get all pending requests (clubs and joins)
 // @access  Private (Admin)
 router.get('/requests', getPendingRequests);
+
+// @route   GET /api/admin/club-requests
+// @desc    Get pending club creation requests
+// @access  Private (Admin)
+router.get('/club-requests', getPendingClubRequests);
+
+// @route   GET /api/admin/join-requests
+// @desc    Get pending join requests
+// @access  Private (Admin)
+router.get('/join-requests', getPendingJoinRequests);
+
+// @route   GET /api/admin/settings
+// @desc    Get system settings and info
+// @access  Private (Admin)
+router.get('/settings', getSystemSettings);
+
+// @route   PUT /api/admin/settings
+// @desc    Update system settings
+// @access  Private (Admin)
+router.put('/settings', updateSystemSettings);
+
+// @route   POST /api/admin/backup
+// @desc    Backup database
+// @access  Private (Admin)
+router.post('/backup', backupDatabase);
+
+// @route   POST /api/admin/cache/clear
+// @desc    Clear system cache
+// @access  Private (Admin)
+router.post('/cache/clear', clearCache);
 
 export default router;

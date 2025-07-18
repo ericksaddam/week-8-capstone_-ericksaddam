@@ -51,8 +51,8 @@ const DiscoverClubs: React.FC = () => {
             fetchAllApprovedClubs(),
             fetchUserClubs()
           ]);
-          const myClubIds = new Set(myClubs.map(club => club._id));
-          fetchedClubs = allClubs.filter(club => !myClubIds.has(club._id));
+          const myClubIds = new Set((myClubs || []).map(club => club._id));
+          fetchedClubs = (allClubs || []).filter(club => !myClubIds.has(club._id));
           break;
         case 'my-clubs':
           fetchedClubs = await fetchUserClubs();

@@ -18,6 +18,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchUserStats, fetchRecentTasks, fetchUserClubs, Task, Club } from "@/api";
 import Navbar from "@/components/Navbar";
 import { VariantProps } from "class-variance-authority";
@@ -30,6 +31,7 @@ interface UserStats {
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -45,9 +47,18 @@ const Dashboard = () => {
         fetchRecentTasks(),
         fetchUserClubs(),
       ]);
-      setUserStats(stats);
-      setRecentTasks(tasks);
-      setClubs(userClubs);
+      
+      // Calculate actual stats from tasks if API doesn't provide them
+      const calculatedStats = {
+        totalTasks: tasks?.length || 0,
+        completedTasks: tasks?.filter(task => task.status === 'completed')?.length || 0,
+        clubs: userClubs?.length || 0,
+        points: stats?.points || 0
+      };
+      
+      setUserStats(calculatedStats);
+      setRecentTasks(tasks || []);
+      setClubs(userClubs || []);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
       const message = err instanceof Error ? err.message : 'Failed to load dashboard data. Please try again.';
@@ -55,6 +66,23 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Navigation handlers
+  const handleTaskClick = (task: Task) => {
+    if (task.type === 'club' && task.club) {
+      navigate(`/clubs/${task.club}`);
+    } else {
+      navigate('/tasks');
+    }
+  };
+
+  const handleClubClick = (clubId: string) => {
+    navigate(`/clubs/${clubId}`);
+  };
+
+  const handleCreateTask = () => {
+    navigate('/tasks');
   };
 
   useEffect(() => {
@@ -119,7 +147,12 @@ const Dashboard = () => {
             <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-2">Welcome back! Here's what's happening with your clubs.</p>
           </div>
-          <Button variant="gradient" size="lg" className="group">
+          <Button 
+            variant="gradient" 
+            size="lg" 
+            className="group" 
+            onClick={handleCreateTask}
+          >
             <Plus className="mr-2 h-5 w-5" />
             Create New Task
           </Button>
@@ -127,37 +160,46 @@ const Dashboard = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-gradient-primary text-white border-0">
+          <Card 
+            className="bg-gradient-primary text-white border-0 cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => navigate('/tasks')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium opacity-90">Total Tasks</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">{userStats?.totalTasks}</div>
+                <div className="text-3xl font-bold">{userStats?.totalTasks || 0}</div>
                 <Target className="h-8 w-8 opacity-80" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-success text-white border-0">
+          <Card 
+            className="bg-gradient-success text-white border-0 cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => navigate('/tasks')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium opacity-90">Completed</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">{userStats?.completedTasks}</div>
+                <div className="text-3xl font-bold">{userStats?.completedTasks || 0}</div>
                 <CheckCircle className="h-8 w-8 opacity-80" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-accent text-white border-0">
+          <Card 
+            className="bg-gradient-accent text-white border-0 cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => navigate('/clubs')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium opacity-90">Active Clubs</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">{userStats?.clubs}</div>
+                <div className="text-3xl font-bold">{userStats?.clubs || 0}</div>
                 <Users className="h-8 w-8 opacity-80" />
               </div>
             </CardContent>
@@ -169,7 +211,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">{userStats?.points}</div>
+                <div className="text-3xl font-bold">{userStats?.points || 0}</div>
                 <Award className="h-8 w-8 opacity-80" />
               </div>
             </CardContent>
@@ -188,23 +230,41 @@ const Dashboard = () => {
                 <CardDescription>Your latest task activities across all clubs</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentTasks.map((task) => (
-                  <div key={task._id || task.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(task.status)}
-                      <div>
-                        <div className="font-medium text-foreground">{task.title}</div>
-                        <div className="text-sm text-muted-foreground">{task.club}</div>
+                {recentTasks && recentTasks.length > 0 ? (
+                  recentTasks.map((task) => (
+                    <div 
+                      key={task._id || task.id} 
+                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => handleTaskClick(task)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(task.status)}
+                        <div>
+                          <div className="font-medium text-foreground">{task.title}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {task.type === 'club' ? `Club: ${task.club || 'Unknown'}` : 'Personal Task'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getPriorityColor(task.priority)}>
+                          {task.priority}
+                        </Badge>
+                        {task.dueDate && (
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(task.dueDate).toLocaleDateString()}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getPriorityColor(task.priority)}>
-                        {task.priority}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">{task.dueDate}</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No recent tasks</p>
+                    <p className="text-xs">Create your first task to get started!</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </div>
@@ -238,22 +298,46 @@ const Dashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {clubs.map((club) => (
-                  <div key={club.id || club._id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${club.color}`}></div>
-                        <span className="font-medium text-foreground">{club.name}</span>
+                {clubs && clubs.length > 0 ? (
+                  clubs.map((club) => {
+                    // Safely extract member count
+                    const memberCount = Array.isArray(club.members) ? club.members.length : 0;
+                    // Safely extract task count
+                    const taskCount = Array.isArray(club.goals) ? club.goals.length : 0;
+                    // Generate a color based on club name
+                    const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
+                    const clubColor = colors[club.name?.length % colors.length] || 'bg-gray-500';
+                    
+                    return (
+                      <div 
+                        key={club._id} 
+                        className="space-y-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => handleClubClick(club._id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${clubColor}`}></div>
+                            <span className="font-medium text-foreground">{club.name}</span>
+                          </div>
+                          <Badge variant="outline">{taskCount} goals</Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span>{memberCount} members</span>
+                          <span className="text-xs">{club.status || 'Active'}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {club.description || 'No description available'}
+                        </div>
                       </div>
-                      <Badge variant="outline">{club.tasks} tasks</Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>{club.members} members</span>
-                      <span>{club.completion}% complete</span>
-                    </div>
-                    <Progress value={club.completion} className="h-2" />
+                    );
+                  })
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No clubs joined yet</p>
+                    <p className="text-xs">Join a club to get started!</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </div>

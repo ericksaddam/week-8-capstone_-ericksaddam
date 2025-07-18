@@ -158,20 +158,46 @@ export const updateTask = async (req, res) => {
     const { title, description, status, priority, dueDate, assignedTo } = req.body;
     const taskId = req.params.id;
 
+    console.log('Update task request:', {
+      taskId,
+      userId: req.user.id,
+      updates: { title, description, status, priority, dueDate, assignedTo }
+    });
+
     const task = await Task.findById(taskId);
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
+    console.log('Task found:', {
+      taskId: task._id,
+      taskType: task.type,
+      createdBy: task.createdBy,
+      userId: req.user.id,
+      comparison: task.createdBy.toString() === req.user.id
+    });
+
     // Check permissions
     if (task.type === 'personal' && task.createdBy.toString() !== req.user.id) {
+      console.log('Access denied for personal task');
       return res.status(403).json({ error: 'Access denied' });
     }
 
     if (task.type === 'club') {
       const club = await Club.findById(task.club);
+      if (!club) {
+        console.log('Club not found for task:', task.club);
+        return res.status(404).json({ error: 'Club not found' });
+      }
       const member = club.members.find(m => m.user.toString() === req.user.id);
+      console.log('Club task permission check:', {
+        clubId: task.club,
+        userId: req.user.id,
+        member: member,
+        memberRole: member?.role
+      });
       if (!member || (member.role !== 'admin' && member.role !== 'owner')) {
+        console.log('Access denied for club task - insufficient permissions');
         return res.status(403).json({ error: 'Only club admins can update club tasks' });
       }
     }

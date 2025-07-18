@@ -32,13 +32,24 @@ export const CreateGoalForm = ({ clubId, onSuccess, onCancel }: CreateGoalFormPr
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log('Submitting goal form with clubId:', clubId);
+    if (!clubId) {
+      const errorMsg = 'Cannot create goal: Missing club ID';
+      console.error(errorMsg);
+      toast.error(errorMsg);
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
-      await createClubGoal(clubId, values);
+      const newGoal = await createClubGoal(clubId, values);
+      console.log('Goal created successfully:', newGoal);
       toast.success('Goal created successfully!');
       onSuccess();
     } catch (error) {
-      toast.error('Failed to create goal', { description: (error as Error).message });
+      console.error('Error creating goal:', error);
+      const errorMessage = (error as Error).message || 'An unknown error occurred';
+      toast.error('Failed to create goal', { description: errorMessage });
     } finally {
       setIsSubmitting(false);
     }

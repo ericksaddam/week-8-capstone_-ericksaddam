@@ -56,7 +56,7 @@ export const ClubManagement = () => {
     setSelectedClubForMember(null);
   };
 
-  const filteredClubs = clubs.filter(club => 
+  const filteredClubs = (clubs || []).filter(club => 
     club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (club.description || '').toLowerCase().includes(searchQuery.toLowerCase())
   );

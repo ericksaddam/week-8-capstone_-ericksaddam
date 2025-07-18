@@ -1,8 +1,6 @@
 import { toast } from '@/components/ui/use-toast';
 
-const API_BASE = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:5000/api'
-  : '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {

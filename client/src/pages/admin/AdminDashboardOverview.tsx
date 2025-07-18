@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Shield, BarChart, Clock, LineChart as LineChartIcon } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const StatCard = ({ title, value, icon: Icon, description }) => (
+const StatCard = ({ title, value, icon: Icon, description }: { title: string; value: number; icon: React.ElementType; description: string }) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -17,7 +17,7 @@ const StatCard = ({ title, value, icon: Icon, description }) => (
   </Card>
 );
 
-const AdminDashboardPage = () => {
+export const AdminDashboardOverview = () => {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [analytics, setAnalytics] = useState<AdminDashboardAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,10 +57,8 @@ const AdminDashboardPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard 
           title="Total Users" 
           value={stats.userStats.totalUsers} 
@@ -81,7 +79,7 @@ const AdminDashboardPage = () => {
         />
       </div>
 
-            <div className="grid gap-8 md:grid-cols-2 mb-8">
+      <div className="grid gap-8 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -155,4 +153,4 @@ const AdminDashboardPage = () => {
   );
 };
 
-export default AdminDashboardPage;
+export default AdminDashboardOverview;

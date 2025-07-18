@@ -180,7 +180,7 @@ export const adminApi = {
 
   // Request Management
   getClubCreationRequests: async (): Promise<ClubCreationRequest[]> => {
-    const res = await fetch(`${API_BASE}/admin/clubs/requests`, {
+        const res = await fetch(`${API_BASE}/admin/club-requests`, {
       headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error('Failed to fetch club creation requests');

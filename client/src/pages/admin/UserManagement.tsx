@@ -22,9 +22,9 @@ export const UserManagement = () => {
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await adminApi.getUsers();
-      setUsers(data);
-      setFilteredUsers(data);
+      const response = await adminApi.getUsers();
+      setUsers(response.users || []);
+      setFilteredUsers(response.users || []);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load users';
       toast({

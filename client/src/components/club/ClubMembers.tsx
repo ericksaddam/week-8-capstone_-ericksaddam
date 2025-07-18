@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ClubMember, updateClubMemberRole, removeMemberFromClub } from '@/api';
+import { ClubMember, updateClubMemberRole, removeClubMember } from '@/api';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
@@ -42,7 +42,7 @@ export const ClubMembers = ({ clubId, currentUserRole, members = [] }: ClubMembe
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      await removeMemberFromClub(clubId, memberId);
+      await removeClubMember(clubId, memberId);
       setLocalMembers(prevMembers => 
         prevMembers.filter(member => member.user._id !== memberId)
       );

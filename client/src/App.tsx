@@ -9,7 +9,6 @@ import Dashboard from "@/components/Dashboard";
 import Tasks from "./pages/Tasks";
 import Clubs from "./pages/Clubs";
 import ClubDetailPage from "./pages/ClubDetailPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
 import DiscoverClubs from "./pages/DiscoverClubs";
 import Settings from "./pages/Settings";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
@@ -95,13 +94,6 @@ const App = () => (
               <Route path="/clubs/:clubId" element={
                 <RequireAuth>
                   <AppLayout><ClubDetailPage /></AppLayout>
-                </RequireAuth>
-              } />
-              <Route path="/admin/dashboard" element={
-                <RequireAuth>
-                  <RequireAdmin>
-                    <AppLayout><AdminDashboardPage /></AppLayout>
-                  </RequireAdmin>
                 </RequireAuth>
               } />
               <Route path="/discover-clubs" element={

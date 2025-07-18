@@ -1,0 +1,116 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Personal files
+.personalsecrets
+notes.md
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+build/
+dist/
+.next/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Dependency directories
+bower_components/
+
+# Build output
+out/
+
+# Cache
+.cache/
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+
+# Local development
+.local
+
+# Serverless directories
+.serverless/
+
+# Vercel
+.vercel
+
+# Debug
+npm-debug.log*
+
+# Local development
+.env.local
+
+# Build output
+.next/
+out/
+
+# Production
+build
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local development
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Yarn
+.pnp/
+.pnp.js
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

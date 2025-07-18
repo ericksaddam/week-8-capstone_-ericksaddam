@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, Search, Loader2 } from "lucide-react";
+import { Plus, Filter, Search, Loader2, AlertCircle } from "lucide-react";
 import TaskCard from "./TaskCard";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,12 @@ export const TaskManagement = () => {
     setActionLoading(true);
     try {
       const created = await createTask(taskData);
+      
+      // Add null check for created task
+      if (!created || !created.title) {
+        throw new Error('Invalid task data returned from server');
+      }
+      
       setTasks(prev => [...prev, created]);
       setIsCreateModalOpen(false);
       toast({ 
@@ -110,6 +116,9 @@ export const TaskManagement = () => {
   };
 
   const filteredTasks = tasks.filter(task => {
+    // Add null check for task
+    if (!task || !task.title) return false;
+    
     const matchesTab = activeTab === "all" || task.status === activeTab;
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (task.description || '').toLowerCase().includes(searchQuery.toLowerCase());

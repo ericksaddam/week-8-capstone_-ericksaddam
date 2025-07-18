@@ -11,12 +11,12 @@ import { toast } from 'sonner';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
-  content: z.string().min(10, 'Your message must be at least 10 characters long.'),
+  description: z.string().min(10, 'Your message must be at least 10 characters long.'),
 });
 
 interface CreateTopicFormProps {
   clubId: string;
-  onSuccess: () => void;
+  onSuccess: (newTopic: any) => void;
   onCancel: () => void;
 }
 
@@ -27,16 +27,15 @@ export const CreateTopicForm = ({ clubId, onSuccess, onCancel }: CreateTopicForm
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      content: '',
+      description: '',
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      await createClubTopic(clubId, values);
-      toast.success('Topic created successfully!');
-      onSuccess();
+      const response = await createClubTopic(clubId, values);
+      onSuccess(response.topic);
     } catch (error) {
       toast.error('Failed to create topic', { description: (error as Error).message });
     } finally {
@@ -62,7 +61,7 @@ export const CreateTopicForm = ({ clubId, onSuccess, onCancel }: CreateTopicForm
         />
         <FormField
           control={form.control}
-          name="content"
+          name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Your Message</FormLabel>

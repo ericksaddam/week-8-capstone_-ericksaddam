@@ -3,13 +3,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "./UserManagement";
 import { AdminClubManagement } from './AdminClubManagement';
 import AdminRequestManagement from './AdminRequestManagement';
-import Navbar from '@/components/Navbar';
+import { AdminDashboardOverview } from './AdminDashboardOverview';
+import { AdminSettings } from './AdminSettings';
 
 export const AdminDashboard = () => {
   return (
-    <>
-    <Navbar />
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 h-[calc(100vh-8rem)] overflow-y-auto">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground">
@@ -17,13 +16,18 @@ export const AdminDashboard = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="requests" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="clubs">Clubs</TabsTrigger>
-          <TabsTrigger value="settings" disabled>Settings</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <AdminDashboardOverview />
+        </TabsContent>
 
         <TabsContent value="requests" className="space-y-4">
           <AdminRequestManagement />
@@ -48,21 +52,10 @@ export const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Settings</CardTitle>
-              <CardDescription>
-                Configure application settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Coming soon</p>
-            </CardContent>
-          </Card>
+          <AdminSettings />
         </TabsContent>
       </Tabs>
     </div>
-    </>
   );
 };
 

@@ -16,7 +16,7 @@ const formSchema = z.object({
 
 interface CreateKnowledgeBaseEntryFormProps {
   clubId: string;
-  onSuccess: () => void;
+  onSuccess: (newEntry: any) => void;
   onCancel: () => void;
 }
 
@@ -34,9 +34,8 @@ export const CreateKnowledgeBaseEntryForm = ({ clubId, onSuccess, onCancel }: Cr
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      await createKnowledgeBaseEntry(clubId, values);
-      toast.success('Article published successfully!');
-      onSuccess();
+      const response = await createKnowledgeBaseEntry(clubId, values);
+      onSuccess(response.entry);
     } catch (error) {
       toast.error('Failed to publish article', { description: (error as Error).message });
     } finally {
