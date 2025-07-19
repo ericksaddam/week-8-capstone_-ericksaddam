@@ -12,25 +12,40 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/harambee';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-// Configure CORS with specific options
-const corsOptions = {
-  origin: [
-    'https://week-8-capstone-ericksaddam.vercel.app',
-    'http://localhost:3000',  // For local development
-    'http://localhost:5173'   // Vite default port
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+// Debug CORS configuration
+const allowAllOrigins = (req, callback) => {
+  const origin = req.header('Origin') || '*';
+  console.log('CORS request from origin:', origin);
+  callback(null, { origin: true });
 };
 
-// Apply CORS with the above options
-app.use(cors(corsOptions));
+// Enable CORS for all routes
+app.use(cors({
+  origin: allowAllOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // 24 hours
+}));
 
 // Handle preflight requests
-app.options('*', cors(corsOptions));
+app.options('*', cors());
+
+// Log CORS headers for debugging
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Log all incoming requests
 app.use((req, res, next) => {
