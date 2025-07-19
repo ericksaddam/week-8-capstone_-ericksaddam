@@ -2,10 +2,9 @@
 
 A world-class collaborative task management application designed to empower communities and teams. Built with professional MERN stack architecture, this platform provides a robust, scalable solution for organizing tasks, managing clubs, and fostering collaboration.
 
-## 🚀 Live Demo
+##  Live Demo
 
-- **Frontend**: [Live Application](https://your-frontend-url.com)
-- **API Documentation**: [API Docs](https://your-api-url.com/docs)
+- **Frontend**: [Live Application](https://week-8-capstone-ericksaddam.vercel.app/)
 
 ## ✨ Key Features
 
@@ -78,7 +77,7 @@ harambee-hub/
 └── .gitignore              # Git ignore rules
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -89,7 +88,7 @@ harambee-hub/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/harambee-hub.git
+git clone https://github.com/ericksaddam/week-8-capstone_-ericksaddam.git
 cd harambee-hub
 ```
 
@@ -142,10 +141,10 @@ VITE_API_BASE_URL=http://localhost:5000/api
 VITE_APP_NAME=Harambee Hub
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication Endpoints
-- `POST /api/auth/register` - Register new user
+- `POST /api/auth/register` - Registhttps://github.com/your-usernameer new user
 - `POST /api/auth/login` - User login
 - `GET /api/auth/profile` - Get user profile
 
@@ -181,7 +180,7 @@ cd client
 npm test
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Backend Deployment
 
@@ -236,7 +235,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Team
 
-- **Developer**: [Your Name](https://github.com/your-username)
+- **Developer**: [Erick Saddam](https://github.com/ericksaddam)
 - **Project**: PLP MERN Stack Development - Week 8 Capstone
 
 ## 🙏 Acknowledgments
@@ -247,8 +246,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email your-email@example.com or create an issue in the GitHub repository.
-
----
-
-**Built with ❤️ using the MERN Stack**
+For support, email ericksaddam3@gmail.com or create an issue in the GitHub repository.
