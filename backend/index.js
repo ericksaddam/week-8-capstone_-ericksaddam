@@ -12,38 +12,46 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/harambee';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-// Debug CORS configuration
-const allowAllOrigins = (req, callback) => {
-  const origin = req.header('Origin') || '*';
-  console.log('CORS request from origin:', origin);
-  callback(null, { origin: true });
-};
-
-// Enable CORS for all routes
-app.use(cors({
-  origin: allowAllOrigins,
+// Configure CORS with specific options
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://week-8-capstone-ericksaddam.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5173'
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      console.error('CORS Error:', msg, 'Origin:', origin);
+      return callback(new Error(msg), false);
+    }
+    
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   credentials: true,
   preflightContinue: false,
   optionsSuccessStatus: 204,
   maxAge: 86400 // 24 hours
-}));
+};
+
+// Enable CORS
+app.use(cors(corsOptions));
 
 // Handle preflight requests
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
-// Log CORS headers for debugging
+// Log all requests for debugging
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, {
+    origin: req.headers.origin,
+    'user-agent': req.headers['user-agent']
+  });
   next();
 });
 
@@ -58,14 +66,36 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// Health check endpoint
+// Health check endpoint with CORS support
 app.get('/api/health', (req, res) => {
   console.log('Health check called from origin:', req.headers.origin);
+  
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  // Get database status
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    database: dbStatus,
+    nodeVersion: process.version,
+    memoryUsage: process.memoryUsage(),
+    headers: {
+      origin: req.headers.origin,
+      'user-agent': req.headers['user-agent']
+    }
   });
 });
 
