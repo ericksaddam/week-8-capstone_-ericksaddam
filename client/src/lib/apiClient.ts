@@ -8,13 +8,25 @@ console.log('Environment:', {
 
 // Construct API base URL with /api suffix
 const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+  let baseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // If VITE_API_BASE_URL is not set, try VITE_API_URL
+  if (!baseUrl && import.meta.env.VITE_API_URL) {
+    baseUrl = `${import.meta.env.VITE_API_URL}/api`;
   }
-  if (import.meta.env.VITE_API_URL) {
-    return `${import.meta.env.VITE_API_URL}/api`;
+
+  // If it's still not set, use the fallback
+  if (!baseUrl) {
+    baseUrl = 'https://week-8-capstone-ericksaddam.onrender.com/api';
   }
-  return 'https://week-8-capstone-ericksaddam.onrender.com/api';
+
+  // Final check: ensure the URL ends with /api
+  if (!baseUrl.endsWith('/api')) {
+    // Avoid double slashes if baseUrl ends with a slash
+    baseUrl = `${baseUrl.replace(/\/$/, '')}/api`;
+  }
+
+  return baseUrl;
 };
 
 const API_BASE = getApiBaseUrl();

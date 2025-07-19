@@ -37,13 +37,12 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    console.log('CORS request from origin:', origin);
-    // Allow requests with no origin (like server-to-server, mobile apps, or curl requests)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (like server-to-server or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      console.log('CORS origin allowed:', origin);
       callback(null, true);
     } else {
+      console.error('CORS origin NOT allowed:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -53,11 +52,24 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware (suppress health check logs)
+// Detailed request logging middleware
 app.use((req, res, next) => {
-  if (!(req.path === '/api/health' || req.path === '/health')) {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const { method, path, headers } = req;
+  // Suppress health check logs to keep logs clean
+  if (path === '/api/health' || path === '/health') {
+    return next();
   }
+
+  const logData = {
+    timestamp: new Date().toISOString(),
+    method,
+    path,
+    origin: headers.origin || 'N/A',
+    referer: headers.referer || 'N/A',
+  };
+
+  console.log('Incoming Request:', JSON.stringify(logData, null, 2));
+  
   next();
 });
 
