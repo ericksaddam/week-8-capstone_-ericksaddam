@@ -6,7 +6,7 @@ console.log('Environment:', {
   NODE_ENV: import.meta.env.MODE
 });
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://week-8-capstone-ericksaddam.onrender.com/api';
 console.log('Using API base URL:', API_BASE);
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -70,7 +70,9 @@ export async function apiFetch<T>(
   }
 }
 export async function checkBackendHealth(): Promise<boolean> {
-  const healthUrl = `${API_BASE}/health`;
+  // For health check, use the base URL without /api since health endpoint is at root
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://week-8-capstone-ericksaddam.onrender.com';
+  const healthUrl = `${baseUrl}/health`;
   console.log('Checking backend health at:', healthUrl);
   
   try {
