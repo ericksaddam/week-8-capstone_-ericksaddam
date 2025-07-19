@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { requestClubCreation, Club } from "@/api";
-import { fetchUserClubRequests } from "@/api/user";
+import { requestNewClub, Club, fetchUserClubRequests } from "@/api";
 import { Badge } from "@/components/ui/badge";
 
 const createClubSchema = z.object({
@@ -67,7 +66,7 @@ export const CreateClubForm = ({ onSuccess, onCancel }: CreateClubFormProps) => 
   const onSubmit = async (data: CreateClubFormData) => {
     setIsLoading(true);
     try {
-      const response = await requestClubCreation(data);
+            const response = await requestNewClub(data);
       
       toast({
         title: "Request Submitted",

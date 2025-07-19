@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Search, Plus, Edit, Trash2, Loader2 } from 'lucide-react';
-import { adminApi, Club } from '@/api/admin';
+import { adminApi, Club } from '@/api';
 import { format } from 'date-fns';
 
 export const AdminClubManagement = () => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AuthContext } from "@/hooks/useAuth";
-import { apiFetch } from "@/lib/apiClient";
+import apiClient from "@/lib/apiClient";
 import { getUserProfile } from '@/lib/userSettingsApi';
 import { fetchNotifications, Notification } from '@/api';
 import { useConnection } from "@/hooks/useConnection";
@@ -88,22 +88,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      const response = await apiFetch<{ token: string; user: User }>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await apiClient.post('/auth/login', { email, password });
       
-      if (!response.token || !response.user) {
+      const { token, user } = response.data;
+      if (!token || !user) {
         throw new Error('Invalid response from server');
       }
-      
+
       // Update state
-      setToken(response.token);
-      setUser(response.user);
-      
+      setToken(token);
+      setUser(user);
+
       // Persist to localStorage
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
       // Fetch initial notifications
       fetchNotifications().then(setNotifications).catch(console.error);
@@ -130,22 +128,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      const response = await apiFetch<{ token: string; user: User }>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ name, email, password }),
-      });
+      const response = await apiClient.post('/auth/register', { name, email, password });
       
-      if (!response.token || !response.user) {
+      const { token, user } = response.data;
+      if (!token || !user) {
         throw new Error('Registration failed. Please try again.');
       }
-      
+
       // Update state
-      setToken(response.token);
-      setUser(response.user);
-      
+      setToken(token);
+      setUser(user);
+
       // Persist to localStorage
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
       // Fetch initial notifications
       fetchNotifications().then(setNotifications).catch(console.error);

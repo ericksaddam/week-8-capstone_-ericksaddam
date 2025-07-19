@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { adminApi, User } from '@/api/admin';
+import { adminApi, User } from '@/api';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

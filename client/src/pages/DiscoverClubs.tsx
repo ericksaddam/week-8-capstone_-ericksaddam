@@ -4,7 +4,7 @@ import {
   fetchUserClubs, 
   fetchPendingClubs, 
   fetchLeftClubs,
-  requestToJoinClub,
+  joinClub,
   leaveClub,
   rejoinClub,
   Club as ApiClub 
@@ -92,7 +92,7 @@ const DiscoverClubs: React.FC = () => {
     setActionLoading(prev => ({ ...prev, [`join-${clubId}`]: true }));
 
     try {
-      await requestToJoinClub(clubId);
+      await joinClub(clubId);
       
       setClubs(prevClubs =>
         prevClubs.map(club =>

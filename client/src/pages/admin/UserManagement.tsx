@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Plus, Edit, Trash2, Shield, ShieldOff, Loader2 } from 'lucide-react';
-import { adminApi, User } from '@/api/admin';
+import { adminApi, User } from '@/api';
 import { format } from 'date-fns';
 import { UserForm } from '@/components/admin/UserForm';
 

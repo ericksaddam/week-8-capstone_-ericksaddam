@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { adminApi, ClubCreationRequest, ClubJoinRequest } from '@/api/admin';
+import { adminApi, ClubCreationRequest, ClubJoinRequest } from '@/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
