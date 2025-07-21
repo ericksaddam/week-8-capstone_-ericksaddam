@@ -14,7 +14,8 @@ import {
   Target,
   MoreVertical,
   Edit,
-  Trash2
+  Trash2,
+  Archive
 } from "lucide-react";
 import { Task } from "@/api";
 import { VariantProps } from "class-variance-authority";
@@ -31,9 +32,10 @@ interface TaskCardProps {
   onStatusChange?: (taskId: string, newStatus: Task['status']) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
+  onTaskClick?: (task: Task) => void;
 }
 
-const TaskCard = ({ task, onStatusChange, onEdit, onDelete }: TaskCardProps) => {
+const TaskCard = ({ task, onStatusChange, onEdit, onDelete, onTaskClick }: TaskCardProps) => {
   const getPriorityColor = (priority: Task['priority']): VariantProps<typeof badgeVariants>["variant"] => {
     switch (priority) {
       case "high": return "destructive";
@@ -66,12 +68,19 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete }: TaskCardProps) => 
     }
   };
 
-  const handleStatusClick = () => {
+  const handleStatusChange = (newStatus: Task['status']) => {
     if (onStatusChange) {
-      const nextStatus = task.status === "pending" ? "in-progress" : 
-                        task.status === "in-progress" ? "completed" : 
-                        task.status === "completed" ? "archived" : "pending";
-      onStatusChange(task._id, nextStatus);
+      onStatusChange(task._id, newStatus);
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger if clicking on interactive elements
+    if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) {
+      return;
+    }
+    if (onTaskClick) {
+      onTaskClick(task);
     }
   };
 
@@ -92,7 +101,10 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete }: TaskCardProps) => 
   };
 
   return (
-    <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-2 border-transparent hover:border-primary/20">
+    <Card 
+      className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 border-2 border-transparent hover:border-primary/20 cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -202,17 +214,46 @@ const TaskCard = ({ task, onStatusChange, onEdit, onDelete }: TaskCardProps) => 
           </div>
 
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleStatusClick}
-              className={`transition-all duration-200 ${
-                task.status === "completed" ? "bg-success text-success-foreground" : ""
-              }`}
-            >
-              {getStatusIcon(task.status)}
-              <span className="ml-1 capitalize">{task.status.replace("-", " ")}</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={`transition-all duration-200 ${
+                    task.status === "completed" ? "bg-success text-success-foreground" : ""
+                  }`}
+                >
+                  {getStatusIcon(task.status)}
+                  <span className="ml-1 capitalize">{task.status.replace("-", " ")}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleStatusChange('pending')}>
+                  <Target className="mr-2 h-4 w-4" />
+                  <span>Pending</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('in-progress')}>
+                  <Clock className="mr-2 h-4 w-4" />
+                  <span>In Progress</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('completed')}>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <span>Completed</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('on-hold')}>
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  <span>On Hold</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('cancelled')}>
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  <span>Cancelled</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('archived')}>
+                  <Archive className="mr-2 h-4 w-4" />
+                  <span>Archived</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

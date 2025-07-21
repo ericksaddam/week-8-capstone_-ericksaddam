@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Filter, Search, Loader2, AlertCircle } from "lucide-react";
 import TaskCard from "./TaskCard";
+import TaskDetails from "./TaskDetails";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,6 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const TaskManagement = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
@@ -113,6 +116,11 @@ export const TaskManagement = () => {
         variant: "destructive" 
       });
     }
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsTaskDetailsOpen(true);
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -283,6 +291,7 @@ export const TaskManagement = () => {
                   task={task}
                   onStatusChange={handleStatusChange}
                   onDelete={handleTaskDelete}
+                  onTaskClick={handleTaskClick}
                 />
               ))}
             </div>
@@ -302,6 +311,21 @@ export const TaskManagement = () => {
             }}
             onCancel={() => setIsCreateModalOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Details Dialog */}
+      <Dialog open={isTaskDetailsOpen} onOpenChange={setIsTaskDetailsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Task Details</DialogTitle>
+          </DialogHeader>
+          {selectedTask && (
+            <TaskDetails 
+              taskId={selectedTask._id} 
+              onClose={() => setIsTaskDetailsOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -64,8 +64,10 @@ export const login = async (req, res) => {
     // Find user
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
+      console.log('Login failure: No user found for email', email.toLowerCase());
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    console.log('Login step: User found', { userId: user._id, email: user.email });
 
     // Check if user is blocked
     if (user.isBlocked) {
@@ -75,10 +77,19 @@ export const login = async (req, res) => {
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log('Login failure: Invalid password for user', { userId: user._id });
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    console.log('Login step: Password verified for user', { userId: user._id });
+
+    // Check for JWT secret
+    if (!process.env.JWT_SECRET) {
+      console.error('FATAL ERROR: JWT_SECRET is not defined.');
+      return res.status(500).json({ error: 'Server configuration error' });
     }
 
     // Generate JWT token
+    console.log('Login step: Generating JWT for user', { userId: user._id });
     const token = jwt.sign(
       { 
         userId: user._id, 

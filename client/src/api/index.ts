@@ -209,7 +209,7 @@ export const adminApi = {
 export const fetchPendingClubs = async (): Promise<Club[]> => {
   try {
     const response = await apiClient.get('/clubs/pending');
-    return response.data;
+    return response.data.clubs || response.data || [];
   } catch (error) {
     console.error('Error fetching pending clubs:', error);
     return [];
@@ -258,7 +258,7 @@ export const fetchClubById = async (clubId: string): Promise<Club> => {
 };
 
 export const requestNewClub = async (clubData: { name: string; description: string }) => {
-  const response = await apiClient.post('/clubs/request', clubData);
+  const response = await apiClient.post('/clubs', clubData);
   return response.data;
 };
 
@@ -384,4 +384,36 @@ export const updateUser = async (id: string, updates: Partial<User>) => {
 export const deleteUser = async (id: string) => {
   const response = await apiClient.delete(`/users/${id}`);
   return response.data;
+};
+
+// --- Enhanced Task Management ---
+
+// Add comment to task
+export const addTaskComment = async (taskId: string, text: string) => {
+  const response = await apiClient.post(`/tasks/${taskId}/comments`, { text });
+  return response.data.comment;
+};
+
+// Add time log entry to task
+export const addTaskTimeLog = async (taskId: string, hours: number, description?: string, date?: string) => {
+  const response = await apiClient.post(`/tasks/${taskId}/time-log`, { hours, description, date });
+  return response.data.timeEntry;
+};
+
+// Toggle checklist item
+export const toggleTaskChecklistItem = async (taskId: string, itemId: string) => {
+  const response = await apiClient.put(`/tasks/${taskId}/checklist/${itemId}/toggle`);
+  return response.data;
+};
+
+// Update task progress
+export const updateTaskProgress = async (taskId: string, progress: number) => {
+  const response = await apiClient.put(`/tasks/${taskId}/progress`, { progress });
+  return response.data;
+};
+
+// Get detailed task information
+export const getTaskDetails = async (taskId: string): Promise<Task> => {
+  const response = await apiClient.get(`/tasks/${taskId}`);
+  return response.data.task;
 };

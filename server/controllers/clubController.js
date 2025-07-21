@@ -773,3 +773,33 @@ export const removeMember = async (req, res) => {
     res.status(500).json({ error: 'Failed to remove member' });
   }
 };
+
+// Get clubs where user has pending join requests
+export const getUserPendingClubs = async (req, res) => {
+  try {
+    const clubs = await Club.find({
+      'joinRequests.user': req.user.id,
+      'joinRequests.status': 'pending',
+      status: 'approved'
+    })
+      .select('name description category joinRequests createdAt')
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 });
+
+    const pendingClubs = clubs.map(club => {
+      const userRequest = club.joinRequests.find(r => 
+        r.user.toString() === req.user.id && r.status === 'pending'
+      );
+      return {
+        ...club.toObject(),
+        requestedAt: userRequest?.requestedAt,
+        joinStatus: 'pending'
+      };
+    });
+
+    res.json({ clubs: pendingClubs });
+  } catch (error) {
+    console.error('Get user pending clubs error:', error);
+    res.status(500).json({ error: 'Failed to fetch pending clubs' });
+  }
+};

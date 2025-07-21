@@ -19,7 +19,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CLIENT_URL
-        value: https://harambee-hub-frontend.onrender.com
+        value: https://week-8-capstone-ericksaddam.vercel.app
     plan: free
 
   # Frontend service
@@ -33,7 +33,7 @@ services:
       staticPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://harambee-hub-backend.onrender.com
+        value: https://week-8-capstone-ericksaddam.onrender.com
     routes:
       - type: rewrite
         source: /*

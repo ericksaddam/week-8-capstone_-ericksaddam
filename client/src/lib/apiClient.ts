@@ -75,10 +75,8 @@ apiClient.interceptors.response.use(
 export const checkBackendHealth = async (): Promise<boolean> => {
   try {
     const healthUrl = `${getApiBaseUrl().replace('/api', '')}/health`;
-    console.log('Checking backend health at:', healthUrl);
     // We use a new axios instance here to avoid the interceptors that add /api
     const response = await axios.get(healthUrl);
-    console.log('Health check successful:', response.data);
     return response.status === 200;
   } catch (error) {
     console.error('Health check failed:', error);

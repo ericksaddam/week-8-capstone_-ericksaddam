@@ -18,7 +18,8 @@ import {
   createKnowledgeBaseEntry,
   getKnowledgeBase,
   updateMemberRole,
-  removeMember
+  removeMember,
+  getUserPendingClubs
 } from '../controllers/clubController.js';
 import { auth, clubAdmin } from '../middleware/auth.js';
 
@@ -38,6 +39,11 @@ router.get('/public', auth, getPublicClubs);
 // @desc    Get user's clubs
 // @access  Private
 router.get('/user', auth, getUserClubs);
+
+// @route   GET /api/clubs/pending
+// @desc    Get clubs where user has pending join requests
+// @access  Private
+router.get('/pending', auth, getUserPendingClubs);
 
 // @route   GET /api/clubs/:id
 // @desc    Get a specific club

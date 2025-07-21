@@ -95,7 +95,7 @@ const AdminRequestManagement: React.FC = () => {
                     <h4 className="font-bold">{req.name}</h4>
                     <p className="text-sm text-muted-foreground">Requested by: {req.createdBy.name} {req.createdAt && `on ${format(new Date(req.createdAt), 'PPP')}`}</p>
                     <p className="text-sm mt-2"><strong>Description:</strong> {req.description}</p>
-                    <p className="text-sm mt-1"><strong>Purpose:</strong> {req.purpose}</p>
+                    {req.category && <p className="text-sm mt-1"><strong>Category:</strong> {req.category}</p>}
                   </div>
                   <div className="flex space-x-2 flex-shrink-0 ml-4">
                     <Button size="sm" variant="outline" onClick={() => handleRejectCreation(req._id)}>Reject</Button>
@@ -127,7 +127,7 @@ const AdminRequestManagement: React.FC = () => {
                       <span className="font-bold">{req.club.name}</span>
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {req.requestedAt ? `Requested on: ${format(new Date(req.requestedAt), 'PPP')}` : 'Request date unavailable'}
+                      {req.createdAt ? `Requested on: ${format(new Date(req.createdAt), 'PPP')}` : 'Request date unavailable'}
                     </p>
                   </div>
                   <div className="flex space-x-2 flex-shrink-0 ml-4">

@@ -9,6 +9,7 @@ import taskRoutes from './routes/tasks.js';
 import clubRoutes from './routes/clubs.js';
 import adminRoutes from './routes/admin.js';
 import communitiesRoutes from './routes/communities.js';
+import taskManagementRoutes from './routes/taskManagement.js';
 import { auth } from './middleware/auth.js';
 import { getUserClubs } from './controllers/clubController.js';
 
@@ -96,6 +97,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/communities', communitiesRoutes);
+app.use('/api', taskManagementRoutes);
 
 // User-specific routes
 app.get('/api/user/clubs', auth, getUserClubs);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import apiClient from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,18 +65,8 @@ export const AdminSettings = () => {
 
   const loadSystemData = async () => {
     try {
-      const response = await fetch('/api/admin/settings', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch system data');
-      }
-      
-      const data = await response.json();
+      const response = await apiClient.get('/admin/settings');
+      const data = response.data;
       
       // Update settings from backend
       setSettings(data.settings);
@@ -101,18 +92,7 @@ export const AdminSettings = () => {
   const handleSaveSettings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(settings)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save settings');
-      }
+      await apiClient.put('/admin/settings', settings);
       
       toast({
         title: 'Success',
@@ -132,19 +112,8 @@ export const AdminSettings = () => {
   const handleBackupDatabase = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/backup', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to backup database');
-      }
-      
-      const data = await response.json();
+      const response = await apiClient.post('/admin/backup');
+      const data = response.data;
       
       toast({
         title: 'Success',
@@ -166,19 +135,8 @@ export const AdminSettings = () => {
   const handleClearCache = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/cache/clear', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to clear cache');
-      }
-      
-      const data = await response.json();
+      const response = await apiClient.post('/admin/cache/clear');
+      const data = response.data;
       
       toast({
         title: 'Success',

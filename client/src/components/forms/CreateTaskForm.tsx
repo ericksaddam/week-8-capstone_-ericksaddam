@@ -190,22 +190,25 @@ export const CreateTaskForm = ({ clubId, onSuccess, onCancel }: CreateTaskFormPr
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Assign To (Optional)</Label>
-            <Select onValueChange={(value) => setValue("assignedTo", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a member to assign" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Leave unassigned</SelectItem>
-                {mockMembers.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Only show assign to field for club tasks */}
+          {clubId && (
+            <div className="space-y-2">
+              <Label>Assign To (Optional)</Label>
+              <Select onValueChange={(value) => setValue("assignedTo", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a member to assign" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Leave unassigned</SelectItem>
+                  {mockMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex space-x-2">
             <Button type="submit" className="flex-1" disabled={isLoading}>

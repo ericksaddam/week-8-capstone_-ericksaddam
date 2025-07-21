@@ -11,10 +11,18 @@ import {
   getDashboardStats,
   getPendingClubRequests,
   getPendingJoinRequests,
+  approveClubCreationRequest,
+  rejectClubCreationRequest,
+  approveJoinRequest,
+  rejectJoinRequest,
+  getAnalytics,
   getSystemSettings,
   updateSystemSettings,
   backupDatabase,
-  clearCache
+  clearCache,
+  getUserActivityLogs,
+  sendSystemNotification,
+  getNotificationStats
 } from '../controllers/adminController.js';
 import { auth, admin } from '../middleware/auth.js';
 
@@ -27,6 +35,18 @@ router.use(auth, admin);
 // @desc    Get dashboard statistics
 // @access  Private (Admin)
 router.get('/dashboard', getDashboardStats);
+
+// @route   GET /api/admin/analytics
+// @desc    Get analytics data
+// @access  Private (Admin)
+router.get('/analytics', getAnalytics);
+
+// User Activity Logs
+router.get('/activity-logs', getUserActivityLogs);
+
+// Notification Management
+router.post('/notifications/send', sendSystemNotification);
+router.get('/notifications/stats', getNotificationStats);
 
 // @route   GET /api/admin/users
 // @desc    Get all users
@@ -77,6 +97,26 @@ router.get('/club-requests', getPendingClubRequests);
 // @desc    Get pending join requests
 // @access  Private (Admin)
 router.get('/join-requests', getPendingJoinRequests);
+
+// @route   POST /api/admin/club-requests/:requestId/approve
+// @desc    Approve club creation request
+// @access  Private (Admin)
+router.post('/club-requests/:requestId/approve', approveClubCreationRequest);
+
+// @route   POST /api/admin/club-requests/:requestId/reject
+// @desc    Reject club creation request
+// @access  Private (Admin)
+router.post('/club-requests/:requestId/reject', rejectClubCreationRequest);
+
+// @route   POST /api/admin/clubs/:clubId/join-requests/:requestId/approve
+// @desc    Approve join request
+// @access  Private (Admin)
+router.post('/clubs/:clubId/join-requests/:requestId/approve', approveJoinRequest);
+
+// @route   POST /api/admin/clubs/:clubId/join-requests/:requestId/reject
+// @desc    Reject join request
+// @access  Private (Admin)
+router.post('/clubs/:clubId/join-requests/:requestId/reject', rejectJoinRequest);
 
 // @route   GET /api/admin/settings
 // @desc    Get system settings and info

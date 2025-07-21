@@ -157,8 +157,8 @@ export const AdminClubManagement = () => {
                     <TableCell>{club.createdBy?.name || 'N/A'}</TableCell>
                     <TableCell>{format(new Date(club.createdAt), 'MMM d, yyyy')}</TableCell>
                     <TableCell>
-                      <Badge variant={club.isActive ? 'default' : 'secondary'}>
-                        {club.isActive ? 'Active' : 'Inactive'}
+                      <Badge variant={club.status === 'approved' ? 'default' : club.status === 'pending' ? 'secondary' : 'destructive'}>
+                        {club.status === 'approved' ? 'Approved' : club.status === 'pending' ? 'Pending' : 'Rejected'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">

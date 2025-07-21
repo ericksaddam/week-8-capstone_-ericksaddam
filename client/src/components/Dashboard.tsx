@@ -13,28 +13,23 @@ import {
   Award,
   Star,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Bell
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchUserStats, fetchRecentTasks, fetchUserClubs, Task, Club } from "@/api";
+import { fetchUserStats, fetchRecentTasks, fetchUserClubs, fetchNotifications, Task, Club, UserStats, Notification } from "@/api";
 import Navbar from "@/components/Navbar";
 import { VariantProps } from "class-variance-authority";
-
-interface UserStats {
-  totalTasks: number;
-  completedTasks: number;
-  clubs: number;
-  points: number;
-}
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,23 +37,27 @@ const Dashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const [stats, tasks, userClubs] = await Promise.all([
+      const [stats, tasks, userClubs, userNotifications] = await Promise.all([
         fetchUserStats(),
         fetchRecentTasks(),
         fetchUserClubs(),
+        fetchNotifications(),
       ]);
       
-      // Calculate actual stats from tasks if API doesn't provide them
-      const calculatedStats = {
-        totalTasks: tasks?.length || 0,
-        completedTasks: tasks?.filter(task => task.status === 'completed')?.length || 0,
-        clubs: userClubs?.length || 0,
-        points: stats?.points || 0
+      // Use stats from API or calculate from tasks
+      const calculatedStats: UserStats = {
+        totalTasks: stats?.totalTasks || tasks?.length || 0,
+        completedTasks: stats?.completedTasks || tasks?.filter(task => task.status === 'completed')?.length || 0,
+        clubs: stats?.clubs || userClubs?.length || 0,
+        points: stats?.points || 0,
+        pendingTasks: stats?.pendingTasks || tasks?.filter(task => task.status === 'pending')?.length || 0,
+        inProgressTasks: stats?.inProgressTasks || tasks?.filter(task => task.status === 'in-progress')?.length || 0
       };
       
       setUserStats(calculatedStats);
       setRecentTasks(tasks || []);
       setClubs(userClubs || []);
+      setNotifications(userNotifications || []);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
       const message = err instanceof Error ? err.message : 'Failed to load dashboard data. Please try again.';
@@ -218,9 +217,96 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Recent Tasks */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Stats and Tasks */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{userStats.totalTasks}</div>
+                  <p className="text-xs text-muted-foreground">All time</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{userStats.completedTasks}</div>
+                  <p className="text-xs text-muted-foreground">Tasks done</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">{userStats.inProgressTasks}</div>
+                  <p className="text-xs text-muted-foreground">Active tasks</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Points</CardTitle>
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">{userStats.points}</div>
+                  <p className="text-xs text-muted-foreground">Total earned</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Quick Actions
+                </CardTitle>
+                <CardDescription>Get things done faster</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    onClick={handleCreateTask}
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    variant="outline"
+                  >
+                    <Plus className="h-6 w-6" />
+                    <span>Create Task</span>
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/clubs')}
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    variant="outline"
+                  >
+                    <Users className="h-6 w-6" />
+                    <span>Browse Clubs</span>
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/discover')}
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    variant="outline"
+                  >
+                    <Star className="h-6 w-6" />
+                    <span>Discover</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Tasks */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -272,19 +358,24 @@ const Dashboard = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Achievement Card */}
-            <Card className="bg-gradient-warm text-white border-0">
+            <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Your Rank
+                  <Award className="h-5 w-5" />
+                  Your Progress
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center space-y-2">
-                  <div className="text-2xl font-bold">{userStats.rank}</div>
-                  <div className="text-sm opacity-90">{userStats.streak} day streak!</div>
-                  <Progress value={userStats.completionRate} className="mt-4" />
-                  <div className="text-sm opacity-90">{userStats.completionRate}% completion rate</div>
+                  <div className="text-2xl font-bold">{userStats.points}</div>
+                  <div className="text-sm opacity-90">Points Earned</div>
+                  <Progress 
+                    value={userStats.totalTasks > 0 ? (userStats.completedTasks / userStats.totalTasks) * 100 : 0} 
+                    className="mt-4" 
+                  />
+                  <div className="text-sm opacity-90">
+                    {userStats.totalTasks > 0 ? Math.round((userStats.completedTasks / userStats.totalTasks) * 100) : 0}% completion rate
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -337,6 +428,63 @@ const Dashboard = () => {
                     <p>No clubs joined yet</p>
                     <p className="text-xs">Join a club to get started!</p>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notifications */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-primary" />
+                  Notifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {notifications && notifications.length > 0 ? (
+                  notifications.slice(0, 5).map((notification) => (
+                    <div 
+                      key={notification._id} 
+                      className={`p-3 rounded-lg border transition-colors hover:bg-muted/50 cursor-pointer ${
+                        !notification.read ? 'bg-blue-50 border-blue-200' : 'bg-background'
+                      }`}
+                      onClick={() => {
+                        if (notification.link) {
+                          navigate(notification.link);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(notification.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No notifications</p>
+                    <p className="text-xs">You're all caught up!</p>
+                  </div>
+                )}
+                {notifications && notifications.length > 5 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate('/notifications')}
+                  >
+                    View all notifications
+                  </Button>
                 )}
               </CardContent>
             </Card>
