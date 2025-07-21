@@ -617,6 +617,23 @@ export interface UserStats {
   points: number;
   pendingTasks: number;
   inProgressTasks: number;
+  pointsBreakdown?: {
+    taskCompletion: number;
+    clubParticipation: number;
+    leadership: number;
+    engagement: number;
+    bonuses: number;
+  };
+  achievements?: {
+    firstTaskCompleted: boolean;
+    taskMaster: boolean;
+    clubLeader: boolean;
+    socialButterfly: boolean;
+    earlyBird: boolean;
+    veteran: boolean;
+  };
+  level?: number;
+  nextLevelPoints?: number;
 }
 
 export interface ClubCreationRequest {

@@ -94,8 +94,8 @@ export const ClubMembers = ({ clubId, currentUserRole, members = [] }: ClubMembe
             </TableRow>
           </TableHeader>
           <TableBody>
-            {localMembers.map((member) => (
-              <TableRow key={member.user._id}>
+            {localMembers.map((member, index) => (
+              <TableRow key={`${member.user._id}-${index}`}>
                 <TableCell className="font-medium">
                   <div className="flex items-center space-x-3">
                     <Avatar>

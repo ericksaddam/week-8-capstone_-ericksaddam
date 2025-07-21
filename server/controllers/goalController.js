@@ -108,7 +108,7 @@ export const createGoal = async (req, res) => {
     // Populate the goal
     await goal.populate([
       { path: 'owner', select: 'name email avatar' },
-      { path: 'assignedTo', select: 'name email avatar' },
+      { path: 'assignedTo.user', select: 'name email avatar' },
       { path: 'createdBy', select: 'name email avatar' }
     ]);
     
@@ -138,21 +138,20 @@ export const getGoalDetails = async (req, res) => {
     const { goalId } = req.params;
     
     const goal = await Goal.findById(goalId)
-      .populate('owner', 'name email avatar')
-      .populate('assignedTo', 'name email avatar')
       .populate('createdBy', 'name email avatar')
       .populate('club', 'name description')
+      .populate('assignedTo.user', 'name email avatar')
       .populate({
         path: 'objectives',
         populate: {
-          path: 'owner assignedTo',
+          path: 'assignedTo createdBy',
           select: 'name email avatar'
         }
       })
       .populate({
         path: 'tasks',
         populate: {
-          path: 'owner assignedTo',
+          path: 'assignees.user createdBy',
           select: 'name email avatar'
         }
       });
@@ -161,7 +160,7 @@ export const getGoalDetails = async (req, res) => {
       return res.status(404).json({ error: 'Goal not found' });
     }
     
-    // Check if user has access to this goal's club
+    // Check if user has access to this goal
     const club = await Club.findById(goal.club);
     const isMember = club.members.some(member => 
       member.user.toString() === req.user.id
@@ -170,11 +169,15 @@ export const getGoalDetails = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
     
-    // Get goal progress analytics
-    const analytics = await Goal.getGoalsWithAnalytics(goal.club, { _id: goalId });
-    const goalWithAnalytics = analytics[0] || goal;
+    // Return goal with basic analytics
+    const goalData = {
+      ...goal.toObject(),
+      isOverdue: goal.isOverdue,
+      daysRemaining: goal.daysRemaining,
+      calculatedProgress: goal.calculatedProgress
+    };
     
-    res.json(goalWithAnalytics);
+    res.json({ goal: goalData });
   } catch (error) {
     console.error('Get goal details error:', error);
     res.status(500).json({ error: 'Failed to fetch goal details' });

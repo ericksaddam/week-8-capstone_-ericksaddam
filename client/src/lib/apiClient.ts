@@ -10,8 +10,13 @@ const getApiBaseUrl = () => {
   }
 
   if (!baseUrl) {
-    // Fallback to production URL
-    baseUrl = 'https://week-8-capstone-ericksaddam.onrender.com/api';
+    // Check if we're in development mode
+    if (import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      baseUrl = 'http://localhost:5000/api';
+    } else {
+      // Fallback to production URL
+      baseUrl = 'https://week-8-capstone-ericksaddam.onrender.com/api';
+    }
   }
 
   // Ensure it ends with /api and doesn't have a trailing slash before it

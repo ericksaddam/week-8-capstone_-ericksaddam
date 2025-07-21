@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, Search, Loader2, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Filter, Search, Loader2, AlertCircle, Target, Eye, X, Calendar, Users, TrendingUp, BarChart3, CheckSquare } from "lucide-react";
 import TaskCard from "./TaskCard";
 import TaskDetails from "./TaskDetails";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
@@ -13,16 +14,47 @@ import { fetchTasks, createTask, updateTask, deleteTask, Task, UpdateTaskData } 
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Goal interface
+interface Goal {
+  _id: string;
+  title: string;
+  description: string;
+  format: 'SMART' | 'OKR';
+  status: 'draft' | 'active' | 'on_hold' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  progress: number;
+  dueDate: string;
+  owner: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  club: {
+    _id: string;
+    name: string;
+  };
+  objectives: any[];
+  tasks: any[];
+  createdAt: string;
+  calculatedProgress?: number;
+  isOverdue?: boolean;
+  daysRemaining?: number;
+}
+
 export const TaskManagement = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+  const [mainTab, setMainTab] = useState("goals");
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [goalDetailsLoading, setGoalDetailsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const { toast } = useToast();
 
@@ -45,9 +77,81 @@ export const TaskManagement = () => {
     }
   }, [toast]);
 
+  const loadGoals = useCallback(async () => {
+    try {
+      // Get user's clubs first
+      const clubsResponse = await fetch('/api/clubs/my-clubs', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (clubsResponse.ok) {
+        const clubsData = await clubsResponse.json();
+        const userClubs = clubsData.clubs || [];
+        
+        // Fetch goals from all user's clubs
+        let allGoals: Goal[] = [];
+        for (const club of userClubs) {
+          const goalsResponse = await fetch(`/api/clubs/${club._id}/goals`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (goalsResponse.ok) {
+            const goalsData = await goalsResponse.json();
+            allGoals = [...allGoals, ...(goalsData.goals || [])];
+          }
+        }
+        
+        setGoals(allGoals);
+      }
+    } catch (err) {
+      console.error('Error loading goals:', err);
+      toast({
+        title: "Error",
+        description: "Failed to load goals. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const fetchGoalDetails = async (goalId: string) => {
+    try {
+      setGoalDetailsLoading(true);
+      const response = await fetch(`/api/goals/${goalId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedGoal(data.goal);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch goal details.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching goal details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch goal details.",
+        variant: "destructive",
+      });
+    } finally {
+      setGoalDetailsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
+    loadGoals();
+  }, [loadTasks, loadGoals]);
 
   const handleTaskCreate = async (taskData: Partial<Task>) => {
     setActionLoading(true);
@@ -143,6 +247,47 @@ export const TaskManagement = () => {
       completed: tasks.filter(t => t.status === "completed").length,
       archived: tasks.filter(t => t.status === "archived").length,
     };
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      draft: { variant: "outline" as const, label: "Draft" },
+      active: { variant: "default" as const, label: "Active" },
+      on_hold: { variant: "secondary" as const, label: "On Hold" },
+      completed: { variant: "default" as const, label: "Completed", className: "bg-green-500" },
+      cancelled: { variant: "destructive" as const, label: "Cancelled" },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    const priorityConfig = {
+      low: { variant: "outline" as const, label: "Low" },
+      medium: { variant: "secondary" as const, label: "Medium" },
+      high: { variant: "default" as const, label: "High", className: "bg-orange-500" },
+      critical: { variant: "destructive" as const, label: "Critical" },
+    };
+    
+    const config = priorityConfig[priority as keyof typeof priorityConfig] || priorityConfig.medium;
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const counts = getTaskCounts();

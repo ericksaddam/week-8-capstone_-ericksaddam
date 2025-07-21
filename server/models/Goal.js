@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const goalSchema = new mongoose.Schema({
+  // Required Fields
   title: {
     type: String,
     required: true,
@@ -17,35 +18,41 @@ const goalSchema = new mongoose.Schema({
     ref: 'Club',
     required: true
   },
-  owner: {
+  createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  assignedTo: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  format: {
+  goalType: {
     type: String,
-    enum: ['SMART', 'OKR'],
+    enum: ['Strategic', 'Operational', 'Personal Development', 'Financial', 'Marketing', 'Events', 'Membership'],
     required: true,
-    default: 'SMART'
+    default: 'Operational'
   },
-  category: {
-    type: String,
-    required: true,
-    trim: true
+  startDate: {
+    type: Date,
+    required: true
   },
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high', 'critical'],
-    default: 'medium'
+  targetDate: {
+    type: Date,
+    required: true
   },
   status: {
     type: String,
-    enum: ['draft', 'active', 'on-hold', 'completed', 'cancelled'],
+    enum: ['draft', 'active', 'completed', 'on_hold', 'cancelled'],
+    required: true,
     default: 'draft'
+  },
+  priority: {
+    type: String,
+    enum: ['high', 'medium', 'low'],
+    required: true,
+    default: 'medium'
+  },
+  framework: {
+    type: String,
+    enum: ['SMART', 'OKR', 'KPI', 'Custom'],
+    default: 'SMART'
   },
   progress: {
     type: Number,
@@ -53,26 +60,78 @@ const goalSchema = new mongoose.Schema({
     max: 100,
     default: 0
   },
+  tags: [{
+    type: String,
+    trim: true
+  }],
   
-  // SMART criteria
-  specific: String,
-  measurable: String,
-  achievable: String,
-  relevant: String,
-  timeBound: String,
-  
-  // OKR format
-  keyResults: [String],
-  
-  // Dates
-  startDate: {
-    type: Date,
-    required: true
+  // Optional Fields
+  assignedTo: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    role: {
+      type: String,
+      default: 'contributor'
+    },
+    assignedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  visibility: {
+    type: String,
+    enum: ['private', 'team', 'club', 'public'],
+    default: 'club'
   },
-  dueDate: {
-    type: Date,
-    required: true
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    content: {
+      type: String,
+      required: true,
+      maxlength: 1000
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  
+  // Framework-specific data
+  smartCriteria: {
+    specific: String,
+    measurable: String,
+    achievable: String,
+    relevant: String,
+    timeBound: String
   },
+  okrData: {
+    keyResults: [{
+      title: String,
+      description: String,
+      targetValue: Number,
+      currentValue: {
+        type: Number,
+        default: 0
+      },
+      unit: String,
+      completed: {
+        type: Boolean,
+        default: false
+      }
+    }]
+  },
+  
+  // Completion tracking
   completedAt: Date,
   
   // Relationships
@@ -89,13 +148,6 @@ const goalSchema = new mongoose.Schema({
     ref: 'Goal'
   }],
   
-  // Metadata
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  tags: [String],
   attachments: [{
     filename: String,
     originalName: String,

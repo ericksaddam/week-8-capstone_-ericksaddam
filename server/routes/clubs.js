@@ -9,8 +9,7 @@ import {
   handleJoinRequest, 
   leaveClub, 
   getClubMembers,
-  createClubGoal,
-  getClubGoals,
+
   createClubTopic,
   getClubTopics,
   addTopicReply,
@@ -80,15 +79,7 @@ router.delete('/:id/leave', auth, leaveClub);
 // @access  Private (Club Members)
 router.get('/:id/members', auth, getClubMembers);
 
-// @route   POST /api/clubs/:clubId/goals
-// @desc    Create a club goal
-// @access  Private (Club Admin/Owner)
-router.post('/:clubId/goals', auth, createClubGoal);
 
-// @route   GET /api/clubs/:clubId/goals
-// @desc    Get club goals
-// @access  Private (Club Members)
-router.get('/:clubId/goals', auth, getClubGoals);
 
 // @route   POST /api/clubs/:clubId/topics
 // @desc    Create a club topic

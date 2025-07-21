@@ -16,9 +16,12 @@ import {
   Filter,
   BarChart3,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Types
 interface Goal {
@@ -93,6 +96,8 @@ const AdminTaskManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [goalDetailsLoading, setGoalDetailsLoading] = useState(false);
 
   // Statistics
   const [stats, setStats] = useState({
@@ -189,6 +194,29 @@ const AdminTaskManagement: React.FC = () => {
       toast.error('Failed to fetch task management data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGoalDetails = async (goalId: string) => {
+    try {
+      setGoalDetailsLoading(true);
+      const response = await fetch(`/api/goals/${goalId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedGoal(data.goal);
+      } else {
+        toast.error('Failed to fetch goal details');
+      }
+    } catch (error) {
+      console.error('Error fetching goal details:', error);
+      toast.error('Failed to fetch goal details');
+    } finally {
+      setGoalDetailsLoading(false);
     }
   };
 
@@ -491,9 +519,20 @@ const AdminTaskManagement: React.FC = () => {
                               </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium">{goal.owner.name}</div>
-                            <div className="text-xs text-muted-foreground">Owner</div>
+                          <div className="text-right space-y-2">
+                            <div>
+                              <div className="text-sm font-medium">{goal.owner.name}</div>
+                              <div className="text-xs text-muted-foreground">Owner</div>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => fetchGoalDetails(goal._id)}
+                              className="flex items-center gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              View Details
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -607,6 +646,179 @@ const AdminTaskManagement: React.FC = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Goal Details Dialog */}
+      <Dialog open={!!selectedGoal} onOpenChange={() => setSelectedGoal(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Goal Details</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSelectedGoal(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {goalDetailsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-sm text-muted-foreground">Loading goal details...</p>
+              </div>
+            </div>
+          ) : selectedGoal ? (
+            <div className="space-y-6">
+              {/* Goal Header */}
+              <div className="border-b pb-4">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold mb-2">{selectedGoal.title}</h2>
+                    <p className="text-muted-foreground mb-4">{selectedGoal.description}</p>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <Badge variant="outline">{selectedGoal.format}</Badge>
+                      {getStatusBadge(selectedGoal.status)}
+                      {getPriorityBadge(selectedGoal.priority)}
+                      <span className="flex items-center gap-1 text-sm">
+                        <TrendingUp className="h-4 w-4" />
+                        {selectedGoal.progress}% Complete
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Owner:</span>
+                    <div className="text-muted-foreground">{selectedGoal.owner?.name}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium">Club:</span>
+                    <div className="text-muted-foreground">{selectedGoal.club?.name}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium">Due Date:</span>
+                    <div className="text-muted-foreground">
+                      {selectedGoal.dueDate ? formatDate(selectedGoal.dueDate) : 'Not set'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Objectives Section */}
+              {selectedGoal.objectives && selectedGoal.objectives.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Objectives ({selectedGoal.objectives.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedGoal.objectives.map((objective: any) => (
+                      <Card key={objective._id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium mb-1">{objective.title}</h4>
+                            <p className="text-sm text-muted-foreground mb-2">{objective.description}</p>
+                            <div className="flex items-center gap-4 text-xs">
+                              {getStatusBadge(objective.status)}
+                              {getPriorityBadge(objective.priority)}
+                              <span className="flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3" />
+                                {objective.progress}% complete
+                              </span>
+                              {objective.dueDate && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  Due: {formatDate(objective.dueDate)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tasks Section */}
+              {selectedGoal.tasks && selectedGoal.tasks.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <CheckSquare className="h-5 w-5" />
+                    Tasks ({selectedGoal.tasks.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedGoal.tasks.map((task: any) => (
+                      <Card key={task._id} className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium mb-1">{task.title}</h4>
+                            <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
+                            <div className="flex items-center gap-4 text-xs flex-wrap">
+                              {getStatusBadge(task.status)}
+                              {getPriorityBadge(task.priority)}
+                              <span className="flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3" />
+                                {task.progress}% complete
+                              </span>
+                              {task.dueDate && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  Due: {formatDate(task.dueDate)}
+                                </span>
+                              )}
+                              {task.assignedTo && task.assignedTo.length > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {task.assignedTo.length} assigned
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Analytics Section */}
+              {selectedGoal.calculatedProgress !== undefined && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Analytics
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-primary">{selectedGoal.calculatedProgress || selectedGoal.progress}%</div>
+                        <div className="text-sm text-muted-foreground">Overall Progress</div>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{selectedGoal.objectives?.length || 0}</div>
+                        <div className="text-sm text-muted-foreground">Objectives</div>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{selectedGoal.tasks?.length || 0}</div>
+                        <div className="text-sm text-muted-foreground">Tasks</div>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

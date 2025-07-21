@@ -39,6 +39,7 @@ const keyResultSchema = new mongoose.Schema({
 });
 
 const objectiveSchema = new mongoose.Schema({
+  // Required Fields
   title: {
     type: String,
     required: true,
@@ -55,43 +56,16 @@ const objectiveSchema = new mongoose.Schema({
     ref: 'Goal',
     required: true
   },
-  club: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Club',
-    required: true
-  },
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  assignedTo: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  
-  // Status and Progress
-  status: {
+  successCriteria: {
     type: String,
-    enum: ['draft', 'active', 'on-hold', 'completed', 'cancelled'],
-    default: 'draft'
+    required: true,
+    maxlength: 1000
   },
-  progress: {
-    type: Number,
-    min: 0,
-    max: 100,
-    default: 0
-  },
-  priority: {
+  metricType: {
     type: String,
-    enum: ['low', 'medium', 'high', 'critical'],
-    default: 'medium'
+    enum: ['percentage', 'count', 'currency', 'time', 'yes_no', 'custom'],
+    default: 'percentage'
   },
-  
-  // Key Results (for OKR format)
-  keyResults: [keyResultSchema],
-  
-  // Dates
   startDate: {
     type: Date,
     required: true
@@ -100,25 +74,33 @@ const objectiveSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  completedAt: Date,
-  
-  // Relationships
-  tasks: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task'
-  }],
-  dependencies: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Objective'
-  }],
-  
-  // Metadata
-  createdBy: {
+  status: {
+    type: String,
+    enum: ['not_started', 'in_progress', 'completed'],
+    required: true,
+    default: 'not_started'
+  },
+  progress: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  tags: [String],
+  
+  // Optional Fields
+  parentObjective: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Objective'
+  },
+  tags: [{
+    type: String,
+    trim: true
+  }],
   attachments: [{
     filename: String,
     originalName: String,
@@ -134,17 +116,49 @@ const objectiveSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    content: {
+      type: String,
+      required: true,
+      maxlength: 1000
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  
+  // Key Results (for OKR format)
+  keyResults: [keyResultSchema],
+  
+  // Completion tracking
+  completedAt: Date,
+  
+  // Relationships
+  tasks: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task'
+  }],
+  
+  // Metadata
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   
   // Metrics
   estimatedHours: Number,
-  actualHours: Number,
-  
-  // Custom fields support
-  customFields: [{
-    name: String,
-    value: mongoose.Schema.Types.Mixed,
-    type: String
-  }]
+  actualHours: Number
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

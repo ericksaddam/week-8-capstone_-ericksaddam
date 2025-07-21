@@ -63,6 +63,16 @@ export const fetchUserStats = async (): Promise<UserStats> => {
   }
 };
 
+export const fetchPointsGuide = async () => {
+  try {
+    const response = await apiClient.get('/users/points-guide');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching points guide:', error);
+    return null;
+  }
+};
+
 export const getUserProfile = async (): Promise<User | null> => {
   try {
     const response = await apiClient.get('/users/profile');
