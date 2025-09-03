@@ -6,6 +6,10 @@ A world-class collaborative task management application designed to empower comm
 
 - **Frontend**: [Live Application](https://week-8-capstone-ericksaddam.vercel.app/)
 
+### 🔑 Admin Credentials
+- **Email**: `ericksaddam2@outlook.com`
+- **Password**: `ksl@123`
+
 ## ✨ Key Features
 
 ### 🔐 Secure Authentication
